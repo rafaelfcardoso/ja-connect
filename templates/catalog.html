@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo JA Distribuidora</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="catalog-header">
+        <div class="header-logo">
+            <img src="assets/ja_logo.png" alt="JA Distribuidora" class="company-logo">
+        </div>
+        <div class="header-content">
+            <h1>JA Distribuidora</h1>
+            <h2>Catálogo de Produtos</h2>
+            <p class="generation-info">Gerado em: {{ generation_date }} | Total de produtos: {{ total_products }}</p>
+        </div>
+    </header>
+
+    <main class="catalog-content">
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ product.imagem_url | fallback_image }}" 
+                         alt="{{ product.nome }}" 
+                         onerror="this.src='{{ '' | fallback_image }}'">
+                </div>
+                
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.nome }}</h3>
+                    
+                    <div class="product-price">
+                        {{ product.preco | format_price }}
+                    </div>
+                    
+                    <div class="product-details">
+                        {% if product.sku %}
+                        <div class="product-sku">
+                            <span class="label">SKU:</span>
+                            <span class="value">{{ product.sku }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if product.barcode %}
+                        <div class="product-barcode">
+                            <span class="label">Código:</span>
+                            <span class="value">{{ product.barcode }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="catalog-footer">
+        <p>JA Distribuidora - Entre em contato via WhatsApp para pedidos</p>
+        <p class="footer-note">Preços sujeitos a alteração sem aviso prévio</p>
+    </footer>
+</body>
+</html>

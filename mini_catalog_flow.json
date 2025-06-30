@@ -1,0 +1,139 @@
+{
+  "name": "Mini‑Catálogo PDF",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "generate-catalog",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "list",
+        "databaseId": "{{ $env.NOTION_DATABASE_ID }}",
+        "filter": {
+          "property": "Catálogo Ativo",
+          "checkbox": {
+            "equals": true
+          }
+        },
+        "returnAll": true
+      },
+      "id": "2",
+      "name": "Notion - Query Catalog",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "\nconst produtos = items[0].json.results.map(r => {\n  const p = r.properties;\n  return {\n    nome: p['Nome']?.title?.[0]?.plain_text || 'Sem nome',\n    preco: p['Preço']?.number || 0,\n    imagem: (p['Imagem']?.files?.[0]?.external?.url) || (p['Imagem']?.files?.[0]?.file?.url) || ''\n  };\n});\nreturn [{ json: { produtos } }];\n"
+      },
+      "id": "3",
+      "name": "Prepare JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.pdfmonkey.io/v1/documents",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "\n{\n  \"document\": {\n    \"template_id\": \"YOUR_TEMPLATE_ID\",\n    \"payload\": {{ JSON.stringify($json) }}\n  }\n}\n",
+        "headerParametersJson": "\n{\n  \"X-API-Key\": \"{{ $env.PDFMONKEY_API_KEY }}\"\n}\n"
+      },
+      "id": "4",
+      "name": "PDFMonkey - Create Catalog",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "waitFor": "response",
+        "responsePropertyName": "download_url",
+        "checkPropertyName": "data.status",
+        "checkPropertyValue": "done",
+        "interval": 2,
+        "timeout": 120
+      },
+      "id": "5",
+      "name": "Wait for PDF",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notion - Query Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Query Catalog": {
+      "main": [
+        [
+          {
+            "node": "Prepare JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare JSON": {
+      "main": [
+        [
+          {
+            "node": "PDFMonkey - Create Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDFMonkey - Create Catalog": {
+      "main": [
+        [
+          {
+            "node": "Wait for PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "versionId": "ee7e7b0f-d255-4dcb-bd97-a1da7be84ffd"
+}
