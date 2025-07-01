@@ -78,12 +78,18 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <button className="w-full bg-ja-500 text-white px-4 py-2 rounded-md hover:bg-ja-600 transition-colors">
+              <a 
+                href="/catalog"
+                className="block w-full bg-ja-500 text-white px-4 py-2 rounded-md hover:bg-ja-600 transition-colors text-center"
+              >
                 Gerar Novo Catálogo
-              </button>
-              <button className="w-full border border-ja-500 text-ja-500 px-4 py-2 rounded-md hover:bg-ja-50 transition-colors">
+              </a>
+              <a 
+                href="/catalog"
+                className="block w-full border border-ja-500 text-ja-500 px-4 py-2 rounded-md hover:bg-ja-50 transition-colors text-center"
+              >
                 Ver Produtos Ativos
-              </button>
+              </a>
             </CardContent>
           </Card>
 
@@ -108,6 +114,14 @@ const Dashboard = () => {
                   <span>catalogo_28_06_2025.pdf</span>
                   <span className="text-muted-foreground">14.2 MB</span>
                 </div>
+              </div>
+              <div className="mt-4">
+                <a 
+                  href="/downloads"
+                  className="text-sm text-ja-500 hover:underline"
+                >
+                  Ver todos os catálogos →
+                </a>
               </div>
             </CardContent>
           </Card>
