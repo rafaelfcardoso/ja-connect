@@ -145,6 +145,6 @@ class CatalogGenerator:
         """
         if not image_url:
             # Return a simple data URL for a gray placeholder
-            return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23f0f0f0'/%3E%3Ctext x='75' y='75' text-anchor='middle' dy='0.35em' fill='%23999' font-family='Arial' font-size='12'%3ESem imagem%3C/text%3E%3C/svg%3E"
+            return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23f0f0f0'/%3E%3Ctext x='60' y='60' text-anchor='middle' dy='0.35em' fill='%23999' font-family='Arial' font-size='12'%3ESem imagem%3C/text%3E%3C/svg%3E"
         
         return image_url

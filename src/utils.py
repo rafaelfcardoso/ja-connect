@@ -4,6 +4,7 @@ Utility functions for the JA Distribuidora catalog generation application.
 
 import os
 import re
+import logging
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -143,3 +144,17 @@ def validate_notion_database_id(database_id: str) -> bool:
         return True
     
     return False
+
+
+def setup_logging(level=logging.INFO):
+    """
+    Set up logging configuration for the application.
+    
+    Args:
+        level: Logging level (default: INFO)
+    """
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
