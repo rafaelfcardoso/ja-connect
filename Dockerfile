@@ -29,17 +29,18 @@ COPY .env.example .env
 RUN mkdir -p /app/output
 
 # Frontend build stage
-FROM node:18-alpine as frontend-builder
+FROM node:18 as frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Copy package files
-COPY frontend/package*.json ./
-RUN npm ci
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm ci
 
 # Copy frontend source and build
-COPY frontend/ ./
-RUN npm run build
+COPY frontend/ ./frontend/
+RUN ls -la frontend/src/lib/
+RUN cd frontend && npm run build
 
 # Final production stage
 FROM python:3.11-slim
