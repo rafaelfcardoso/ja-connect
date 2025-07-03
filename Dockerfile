@@ -39,6 +39,7 @@ RUN cd frontend && npm ci
 
 # Copy frontend source files
 COPY frontend/src ./frontend/src
+COPY frontend/src/lib ./frontend/src/lib
 COPY frontend/public ./frontend/public
 COPY frontend/index.html ./frontend/
 COPY frontend/vite.config.ts ./frontend/
@@ -49,7 +50,9 @@ COPY frontend/eslint.config.js ./frontend/
 COPY frontend/components.json ./frontend/
 
 # Debug and build
-RUN ls -la frontend/src/lib/
+RUN ls -la frontend/
+RUN ls -la frontend/src/
+RUN ls -la frontend/src/lib/ || echo "lib directory not found"
 RUN cd frontend && npm run build
 
 # Final production stage
