@@ -43,9 +43,10 @@ COPY frontend/public ./frontend/public
 COPY frontend/index.html ./frontend/
 COPY frontend/vite.config.ts ./frontend/
 COPY frontend/tsconfig*.json ./frontend/
-COPY frontend/tailwind.config.js ./frontend/
+COPY frontend/tailwind.config.ts ./frontend/
 COPY frontend/postcss.config.js ./frontend/
 COPY frontend/eslint.config.js ./frontend/
+COPY frontend/components.json ./frontend/
 
 # Debug and build
 RUN ls -la frontend/src/lib/
