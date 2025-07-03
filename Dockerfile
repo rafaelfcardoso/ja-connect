@@ -39,7 +39,6 @@ RUN cd frontend && npm ci
 
 # Copy frontend source files
 COPY frontend/src ./frontend/src
-COPY frontend/src/lib ./frontend/src/lib
 COPY frontend/public ./frontend/public
 COPY frontend/index.html ./frontend/
 COPY frontend/vite.config.ts ./frontend/
