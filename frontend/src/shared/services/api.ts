@@ -2,6 +2,8 @@
  * API service for communicating with the backend server
  */
 
+import { authService } from './authService';
+
 // Types
 export interface Product {
   nome: string;
@@ -55,6 +57,7 @@ class ApiService {
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...authService.getAuthHeaders(),
         ...options.headers,
       },
       ...options,
@@ -64,6 +67,14 @@ class ApiService {
       const response = await fetch(url, config);
       
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401) {
+          // Clear auth state and redirect to login
+          await authService.logout();
+          window.location.href = '/login';
+          throw new Error('Sessão expirada. Faça login novamente.');
+        }
+        
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
@@ -95,9 +106,18 @@ class ApiService {
 
   // Download catalog file
   async downloadCatalog(filename: string): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/api/download/${filename}`);
+    const response = await fetch(`${this.baseUrl}/api/download/${filename}`, {
+      headers: {
+        ...authService.getAuthHeaders(),
+      },
+    });
     
     if (!response.ok) {
+      if (response.status === 401) {
+        await authService.logout();
+        window.location.href = '/login';
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
       throw new Error(`Download failed: ${response.statusText}`);
     }
 

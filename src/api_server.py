@@ -6,14 +6,19 @@ import os
 import logging
 from typing import List, Dict, Any
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from notion_api import NotionClient
 from catalog_generator import CatalogGenerator
 from utils import setup_logging
+from auth import (
+    user_manager, UserLogin, UserCreate, Token, UserResponse,
+    create_tokens, verify_token, UserInDB
+)
 
 # Configure logging
 setup_logging()
@@ -44,6 +49,50 @@ app.add_middleware(
 notion_client = NotionClient()
 catalog_generator = CatalogGenerator()
 
+# Security
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> UserInDB:
+    """Get current authenticated user from JWT token."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        token = credentials.credentials
+        payload = verify_token(token)
+        if payload is None:
+            raise credentials_exception
+        
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+            
+        user = user_manager.get_user(email)
+        if user is None:
+            raise credentials_exception
+            
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Inactive user"
+            )
+            
+        return user
+    except Exception:
+        raise credentials_exception
+
+async def get_current_admin_user(current_user: UserInDB = Depends(get_current_user)) -> UserInDB:
+    """Get current authenticated admin user."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    return current_user
+
 # Pydantic models for request/response
 class Product(BaseModel):
     nome: str
@@ -61,6 +110,71 @@ class CatalogResponse(BaseModel):
     message: str
     file_path: str = None
     file_name: str = None
+
+# Authentication endpoints
+@app.post("/api/auth/login", response_model=Token)
+async def login(user_credentials: UserLogin):
+    """Authenticate user and return JWT tokens."""
+    try:
+        user = user_manager.authenticate_user(user_credentials.email, user_credentials.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        tokens = create_tokens(user)
+        logger.info(f"User {user.email} logged in successfully")
+        return tokens
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Login failed"
+        )
+
+@app.post("/api/auth/logout")
+async def logout(current_user: UserInDB = Depends(get_current_user)):
+    """Logout user (token invalidation handled client-side)."""
+    logger.info(f"User {current_user.email} logged out")
+    return {"message": "Successfully logged out"}
+
+@app.get("/api/auth/me", response_model=UserResponse)
+async def get_current_user_info(current_user: UserInDB = Depends(get_current_user)):
+    """Get current user information."""
+    return UserResponse(
+        email=current_user.email,
+        full_name=current_user.full_name,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at
+    )
+
+@app.post("/api/auth/create-user", response_model=UserResponse)
+async def create_user(user_data: UserCreate, admin_user: UserInDB = Depends(get_current_admin_user)):
+    """Create new user (admin only)."""
+    try:
+        new_user = user_manager.create_user(user_data)
+        logger.info(f"Admin {admin_user.email} created new user: {new_user.email}")
+        return UserResponse(
+            email=new_user.email,
+            full_name=new_user.full_name,
+            role=new_user.role,
+            is_active=new_user.is_active,
+            created_at=new_user.created_at
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"User creation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user"
+        )
 
 @app.get("/")
 async def root():
@@ -91,7 +205,7 @@ async def health_check():
     }
 
 @app.get("/api/products")
-async def get_products():
+async def get_products(current_user: UserInDB = Depends(get_current_user)):
     """Get all active products from Notion database."""
     try:
         logger.info("Fetching active products from Notion")
@@ -108,13 +222,13 @@ async def get_products():
         raise HTTPException(status_code=500, detail=f"Failed to fetch products: {str(e)}")
 
 @app.post("/api/generate-catalog")
-async def generate_catalog(request: CatalogRequest, background_tasks: BackgroundTasks):
+async def generate_catalog(request: CatalogRequest, background_tasks: BackgroundTasks, current_user: UserInDB = Depends(get_current_user)):
     """Generate PDF catalog from selected products."""
     try:
         if not request.selected_products:
             raise HTTPException(status_code=400, detail="No products selected for catalog generation")
         
-        logger.info(f"Generating catalog with {len(request.selected_products)} products")
+        logger.info(f"User {current_user.email} generating catalog with {len(request.selected_products)} products")
         
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -126,7 +240,7 @@ async def generate_catalog(request: CatalogRequest, background_tasks: Background
             filename=output_filename
         )
         
-        logger.info(f"Catalog generated successfully: {output_path}")
+        logger.info(f"Catalog generated successfully by {current_user.email}: {output_path}")
         
         return CatalogResponse(
             success=True,
@@ -140,7 +254,7 @@ async def generate_catalog(request: CatalogRequest, background_tasks: Background
         raise HTTPException(status_code=500, detail=f"Failed to generate catalog: {str(e)}")
 
 @app.get("/api/download/{filename}")
-async def download_catalog(filename: str):
+async def download_catalog(filename: str, current_user: UserInDB = Depends(get_current_user)):
     """Download generated catalog PDF."""
     try:
         # Security check - only allow PDF files and sanitize filename

@@ -6,8 +6,11 @@ import {
   FileDown,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../../../features/auth/hooks/useAuth';
 
 interface SidebarProps {
   onCollapsedChange?: (collapsed: boolean) => void;
@@ -17,6 +20,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onCollapsedChange, defaultCollapsed = false }) => {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const toggleSidebar = () => {
     const newCollapsed = !collapsed;
@@ -72,24 +76,47 @@ const Sidebar: React.FC<SidebarProps> = ({ onCollapsedChange, defaultCollapsed =
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-white/10 flex items-center">
-        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
-          <span className="font-medium text-sm">JA</span>
-        </div>
-        {!collapsed && (
-          <div className="ml-3">
-            <div className="font-medium text-sm text-white">JA Distribuidora</div>
-            <div className="text-xs text-white/70">Sistema de Catálogos</div>
+      <div className="p-4 border-t border-white/10">
+        {/* User Info */}
+        <div className="flex items-center mb-3">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+            <User size={16} />
           </div>
-        )}
-        <button
-          onClick={() => window.location.href = '/settings'}
-          className="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/30 transition-colors"
-          title="Ir para Configurações"
-        >
-          <Settings size={18} className="text-white" />
-        </button>
-        
+          {!collapsed && (
+            <div className="ml-3 flex-1 min-w-0">
+              <div className="font-medium text-sm text-white truncate">
+                {user?.full_name || 'Usuário'}
+              </div>
+              <div className="text-xs text-white/70 truncate">
+                {user?.email}
+              </div>
+              {user?.role === 'admin' && (
+                <div className="text-xs text-yellow-200 font-medium">
+                  Administrador
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => window.location.href = '/settings'}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/20 transition-colors"
+            title="Configurações"
+          >
+            <Settings size={16} className="text-white" />
+          </button>
+          
+          <button
+            onClick={logout}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-500/20 transition-colors"
+            title="Logout"
+          >
+            <LogOut size={16} className="text-white" />
+          </button>
+        </div>
       </div>
     </div>
   );

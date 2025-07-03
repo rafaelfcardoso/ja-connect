@@ -5,9 +5,13 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Switch } from "@/shared/components/ui/switch";
-import { Settings as SettingsIcon, Database, FileText, Palette } from "lucide-react";
+import { Badge } from "@/shared/components/ui/badge";
+import { Settings as SettingsIcon, Database, FileText, Palette, User, Shield } from "lucide-react";
+import { useAuth } from "../../auth/hooks/useAuth";
 
 const Settings = () => {
+  const { user } = useAuth();
+
   return (
     <DashboardLayout title="Configurações">
       <div className="space-y-6">
@@ -20,6 +24,97 @@ const Settings = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Profile */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-ja-500" />
+                Perfil do Usuário
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full-name">Nome Completo</Label>
+                  <Input
+                    id="full-name"
+                    placeholder="Seu nome completo"
+                    defaultValue={user?.full_name || ''}
+                    disabled
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    defaultValue={user?.email || ''}
+                    disabled
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="space-y-2">
+                  <Label>Tipo de Usuário</Label>
+                  <div>
+                    <Badge 
+                      variant={user?.role === 'admin' ? 'default' : 'secondary'}
+                      className={user?.role === 'admin' ? 'bg-ja-500 text-white' : ''}
+                    >
+                      {user?.role === 'admin' ? (
+                        <>
+                          <Shield className="w-3 h-3 mr-1" />
+                          Administrador
+                        </>
+                      ) : (
+                        <>
+                          <User className="w-3 h-3 mr-1" />
+                          Usuário
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status da Conta</Label>
+                  <div>
+                    <Badge variant={user?.is_active ? 'default' : 'destructive'}>
+                      {user?.is_active ? 'Ativa' : 'Inativa'}
+                    </Badge>
+                  </div>
+                </div>
+
+                {user?.created_at && (
+                  <div className="space-y-2">
+                    <Label>Membro desde</Label>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Para alterar informações do perfil, entre em contato com o administrador do sistema.
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    Alterar Senha
+                  </Button>
+                  {user?.role === 'admin' && (
+                    <Button variant="outline" size="sm">
+                      Gerenciar Usuários
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {/* Notion Integration */}
           <Card>
             <CardHeader>
