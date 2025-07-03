@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   ja-distribuidora:
     build: .
     container_name: ja-distribuidora-catalog
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       - NOTION_API_TOKEN=${NOTION_API_TOKEN}
       - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
@@ -22,7 +20,7 @@ services:
       - .env
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
