@@ -1,0 +1,56 @@
+# Easypanel configuration for JA Distribuidora
+name: ja-distribuidora-catalog
+description: Product catalog generation system with Notion integration
+
+services:
+  - name: catalog-app
+    type: app
+    source:
+      type: github
+      repo: your-username/ja-distribuidora
+      branch: main
+    build:
+      type: dockerfile
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 1
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 250m
+        limits:
+          memory: 1Gi
+          cpu: 500m
+    env:
+      - name: NOTION_API_TOKEN
+        value: "${NOTION_API_TOKEN}"
+      - name: NOTION_DATABASE_ID  
+        value: "20009e6acd3480e19a27f3364f6c209d"
+      - name: OUTPUT_DIR
+        value: "/app/output"
+      - name: TEMPLATE_DIR
+        value: "/app/templates"
+      - name: API_HOST
+        value: "0.0.0.0"
+      - name: API_PORT
+        value: "8000"
+      - name: VITE_API_URL
+        value: "https://jadistribuidora.site"
+    ports:
+      - name: http
+        port: 8000
+        public: true
+    volumes:
+      - name: pdf-storage
+        mountPath: /app/output
+        size: 5Gi
+    healthcheck:
+      path: /api/health
+      port: 8000
+      initialDelaySeconds: 30
+      periodSeconds: 30
+
+volumes:
+  - name: pdf-storage
+    size: 5Gi
+    accessMode: ReadWriteOnce

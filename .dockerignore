@@ -1,0 +1,71 @@
+# Development files
+node_modules/
+frontend/node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+frontend/dist/
+output/*.pdf
+
+# Logs
+*.log
+logs/
+
+# Documentation
+*.md
+FINAL_FIXES.md
+LAYOUT_FIXES.md
+problem-solution
+requisitos_catalogo_pdf.md
+
+# Test files
+test_*.py
+*_test.py
+debug_*.py
+inspect_*.py
+find_*.py
+validate_*.py
+
+# Images and assets (except templates)
+*.jpeg
+*.jpg
+*.png
+!templates/assets/*.png
+!frontend/public/*.png
+
+# Temporary files
+preview_layout.html

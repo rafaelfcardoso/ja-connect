@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  ja-distribuidora:
+    build: .
+    container_name: ja-distribuidora-catalog
+    ports:
+      - "8000:8000"
+    environment:
+      - NOTION_API_TOKEN=${NOTION_API_TOKEN}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
+      - OUTPUT_DIR=/app/output
+      - TEMPLATE_DIR=/app/templates
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    volumes:
+      # Persistent storage for generated PDFs
+      - pdf_storage:/app/output
+      # Optional: Mount templates for easy editing
+      - ./templates:/app/templates:ro
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  pdf_storage:
+    driver: local
