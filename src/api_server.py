@@ -12,10 +12,10 @@ from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
-from notion_api import NotionClient
-from catalog_generator import CatalogGenerator
-from utils import setup_logging
-from auth import (
+from .notion_api import NotionClient
+from .catalog_generator import CatalogGenerator
+from .utils import setup_logging
+from .auth import (
     user_manager, UserLogin, UserCreate, Token, UserResponse,
     create_tokens, verify_token, UserInDB
 )
@@ -36,9 +36,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # Alternative dev server
+        "http://localhost:3000",  # Frontend service (nginx)
         "https://jadistribuidora.site",  # Production domain
         "https://www.jadistribuidora.site",  # Production domain with www
+        "http://ja-distribuidora-frontend:3000",  # Docker service-to-service
     ],
     allow_credentials=True,
     allow_methods=["*"],

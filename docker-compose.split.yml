@@ -1,0 +1,60 @@
+services:
+  # Backend API Service
+  ja-distribuidora-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ja-distribuidora-api
+    ports:
+      - '8000:8000'
+    environment:
+      - NOTION_API_TOKEN=${NOTION_API_TOKEN}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
+      - OUTPUT_DIR=/app/output
+      - TEMPLATE_DIR=/app/templates
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    volumes:
+      # Persistent storage for generated PDFs
+      - pdf_storage:/app/output
+      # Optional: Mount templates for easy editing
+      - ./templates:/app/templates:ro
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ja-network
+
+  # Frontend Static Service
+  ja-distribuidora-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ja-distribuidora-frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - ja-distribuidora-api
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - ja-network
+
+volumes:
+  pdf_storage:
+    driver: local
+
+networks:
+  ja-network:
+    driver: bridge
