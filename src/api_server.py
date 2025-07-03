@@ -8,8 +8,9 @@ from typing import List, Dict, Any
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .notion_api import NotionClient
@@ -52,6 +53,21 @@ catalog_generator = CatalogGenerator()
 
 # Security
 security = HTTPBearer()
+
+# Mount static files for frontend
+frontend_dist_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
+if os.path.exists(frontend_dist_path):
+    # Mount assets directory for static files
+    assets_path = os.path.join(frontend_dist_path, 'assets')
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+        logger.info(f"Frontend assets mounted from: {assets_path}")
+    
+    # Mount other static files
+    app.mount("/static", StaticFiles(directory=frontend_dist_path), name="static")
+    logger.info(f"Frontend static files mounted from: {frontend_dist_path}")
+else:
+    logger.warning(f"Frontend dist directory not found: {frontend_dist_path}")
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> UserInDB:
     """Get current authenticated user from JWT token."""
@@ -279,6 +295,31 @@ async def download_catalog(filename: str, current_user: UserInDB = Depends(get_c
     except Exception as e:
         logger.error(f"Error downloading file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+
+# Serve frontend for all non-API routes (SPA fallback)
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    """Serve frontend HTML for all non-API routes."""
+    # Skip API routes
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+    
+    frontend_dist_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
+    
+    # Try to serve static files directly first
+    requested_file = os.path.join(frontend_dist_path, full_path)
+    if os.path.exists(requested_file) and os.path.isfile(requested_file):
+        return FileResponse(requested_file)
+    
+    # Serve index.html for all frontend routes (SPA fallback)
+    index_path = os.path.join(frontend_dist_path, 'index.html')
+    
+    if os.path.exists(index_path):
+        with open(index_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content, status_code=200)
+    else:
+        raise HTTPException(status_code=404, detail="Frontend not found")
 
 if __name__ == "__main__":
     import uvicorn
