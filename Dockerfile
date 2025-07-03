@@ -33,12 +33,21 @@ FROM node:18 as frontend-builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first
 COPY frontend/package*.json ./frontend/
 RUN cd frontend && npm ci
 
-# Copy frontend source and build
-COPY frontend/ ./frontend/
+# Copy frontend source files
+COPY frontend/src ./frontend/src
+COPY frontend/public ./frontend/public
+COPY frontend/index.html ./frontend/
+COPY frontend/vite.config.ts ./frontend/
+COPY frontend/tsconfig*.json ./frontend/
+COPY frontend/tailwind.config.js ./frontend/
+COPY frontend/postcss.config.js ./frontend/
+COPY frontend/eslint.config.js ./frontend/
+
+# Debug and build
 RUN ls -la frontend/src/lib/
 RUN cd frontend && npm run build
 
