@@ -23,7 +23,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend source code
 COPY src/ ./src/
 COPY templates/ ./templates/
-COPY .env.example .env
 
 # Create output directory
 RUN mkdir -p /app/output
