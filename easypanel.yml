@@ -36,6 +36,12 @@ services:
         value: "8000"
       - name: VITE_API_URL
         value: "https://app.jadistribuidora.site"
+      - name: JWT_SECRET_KEY
+        value: "ja-distribuidora-super-secret-key-change-in-production"
+      - name: ADMIN_EMAIL
+        value: "admin@jadistribuidora.com"
+      - name: ADMIN_PASSWORD
+        value: "JA2024Admin!"
     ports:
       - name: http
         port: 8000
