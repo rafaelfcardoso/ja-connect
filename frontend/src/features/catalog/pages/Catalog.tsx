@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { apiService, type Product } from "@/shared/services/api";
 import { toast } from "sonner";
+import PriceEditDialog from "../components/PriceEditDialog";
 
 
 const Catalog = () => {
@@ -74,6 +75,14 @@ const Catalog = () => {
   const getSelectedProductsData = (): Product[] => {
     return filteredProducts.filter(product => 
       selectedProducts.has(`${product.nome}_${product.sku}`)
+    );
+  };
+
+  const handlePriceUpdate = (productId: string, newPrice: number) => {
+    setProducts(prevProducts =>
+      prevProducts.map(product =>
+        product.id === productId ? { ...product, preco: newPrice } : product
+      )
     );
   };
 
@@ -242,7 +251,7 @@ const Catalog = () => {
               return (
                 <Card 
                   key={productKey} 
-                  className={`overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  className={`overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-md group ${
                     isSelected ? 'ring-2 ring-ja-500 shadow-lg' : ''
                   }`}
                   onClick={() => handleProductSelection(productKey, !isSelected)}
@@ -276,12 +285,20 @@ const Catalog = () => {
                       <h3 className="font-medium text-sm line-clamp-2">{product.nome}</h3>
                       
                       <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-ja-600">
-                          {product.preco !== null 
-                            ? `R$ ${product.preco.toFixed(2).replace('.', ',')}` 
-                            : 'Preço não informado'
-                          }
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg font-bold text-ja-600">
+                            {product.preco !== null 
+                              ? `R$ ${product.preco.toFixed(2).replace('.', ',')}` 
+                              : 'Preço não informado'
+                            }
+                          </span>
+                          {product.id && (
+                            <PriceEditDialog 
+                              product={product} 
+                              onPriceUpdate={handlePriceUpdate}
+                            />
+                          )}
+                        </div>
                         <Badge variant="default" className="bg-green-100 text-green-800">
                           Ativo
                         </Badge>

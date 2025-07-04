@@ -92,6 +92,7 @@ class NotionClient:
                 return None
             
             return {
+                'id': page.get('id'),
                 'nome': nome,
                 'preco': preco,
                 'sku': sku or '',
@@ -134,3 +135,31 @@ class NotionClient:
                 elif first_file.get('type') == 'file':
                     return first_file.get('file', {}).get('url')
         return None
+    
+    def update_product_price(self, product_id: str, new_price: float) -> bool:
+        """
+        Update the price of a specific product in the Notion database.
+        
+        Args:
+            product_id: The Notion page ID of the product
+            new_price: The new price value
+            
+        Returns:
+            True if update successful, False otherwise
+        """
+        try:
+            self.client.pages.update(
+                page_id=product_id,
+                properties={
+                    "Valor": {
+                        "number": new_price
+                    }
+                }
+            )
+            
+            self.logger.info(f"Successfully updated price for product {product_id} to {new_price}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error updating product price: {str(e)}")
+            return False

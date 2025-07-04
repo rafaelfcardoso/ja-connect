@@ -6,6 +6,7 @@ import { authService } from './authService';
 
 // Types
 export interface Product {
+  id?: string;
   nome: string;
   preco: number | null;
   sku: string;
@@ -36,6 +37,18 @@ export interface HealthResponse {
   notion_status: string;
   active_products: number;
   timestamp: string;
+}
+
+export interface PriceUpdateRequest {
+  product_id: string;
+  new_price: number;
+}
+
+export interface PriceUpdateResponse {
+  success: boolean;
+  message: string;
+  product_id: string;
+  new_price: number;
 }
 
 // Configuration
@@ -94,6 +107,19 @@ class ApiService {
   // Get all active products
   async getProducts(): Promise<ProductsResponse> {
     return this.request<ProductsResponse>('/api/products');
+  }
+
+  // Update product price
+  async updateProductPrice(productId: string, newPrice: number): Promise<PriceUpdateResponse> {
+    const request: PriceUpdateRequest = {
+      product_id: productId,
+      new_price: newPrice,
+    };
+    
+    return this.request<PriceUpdateResponse>(`/api/products/${productId}/price`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
   }
 
   // Generate catalog from selected products

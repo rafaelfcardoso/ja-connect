@@ -13,10 +13,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .notion_api import NotionClient
-from .catalog_generator import CatalogGenerator
-from .utils import setup_logging
-from .auth import (
+from notion_api import NotionClient
+from catalog_generator import CatalogGenerator
+from utils import setup_logging
+from auth import (
     user_manager, UserLogin, UserCreate, Token, UserResponse,
     create_tokens, verify_token, UserInDB
 )
@@ -113,11 +113,16 @@ async def get_current_admin_user(current_user: UserInDB = Depends(get_current_us
 
 # Pydantic models for request/response
 class Product(BaseModel):
+    id: str = None
     nome: str
     preco: float = None
     sku: str = ""
     barcode: str = ""
     imagem_url: str = None
+
+class PriceUpdateRequest(BaseModel):
+    product_id: str
+    new_price: float
 
 class CatalogRequest(BaseModel):
     selected_products: List[Dict[str, Any]]
@@ -238,6 +243,41 @@ async def get_products(current_user: UserInDB = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Error fetching products: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch products: {str(e)}")
+
+@app.put("/api/products/{product_id}/price")
+async def update_product_price(product_id: str, request: PriceUpdateRequest, current_user: UserInDB = Depends(get_current_user)):
+    """Update the price of a specific product in Notion database."""
+    try:
+        # Validate price
+        if request.new_price < 0:
+            raise HTTPException(status_code=400, detail="Price cannot be negative")
+        
+        # Validate product_id matches request
+        if product_id != request.product_id:
+            raise HTTPException(status_code=400, detail="Product ID mismatch")
+        
+        logger.info(f"User {current_user.email} updating price for product {product_id} to {request.new_price}")
+        
+        # Update price in Notion
+        success = notion_client.update_product_price(product_id, request.new_price)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update product price in Notion")
+        
+        logger.info(f"Successfully updated price for product {product_id} by {current_user.email}")
+        
+        return {
+            "success": True,
+            "message": f"Price updated successfully to {request.new_price}",
+            "product_id": product_id,
+            "new_price": request.new_price
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating product price: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update product price: {str(e)}")
 
 @app.post("/api/generate-catalog")
 async def generate_catalog(request: CatalogRequest, background_tasks: BackgroundTasks, current_user: UserInDB = Depends(get_current_user)):
