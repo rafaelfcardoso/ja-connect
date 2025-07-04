@@ -7,7 +7,7 @@ services:
     type: app
     source:
       type: github
-      repo: your-username/ja-distribuidora
+      repo: rafaelfcardoso/ja-connect
       branch: main
     build:
       type: dockerfile

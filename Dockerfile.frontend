@@ -31,10 +31,11 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'nginx -g "daemon off;"' >> /start.sh && \
     chmod +x /start.sh
 
-# Set default backend URL for local development
-ENV BACKEND_URL=http://localhost:8000
+# Set default backend URL to point to backend container
+ENV BACKEND_URL=http://ja-connect_backend:8000
 
-# Expose port
+# Expose ports
+EXPOSE 80
 EXPOSE 3000
 
 # Start nginx with environment substitution
