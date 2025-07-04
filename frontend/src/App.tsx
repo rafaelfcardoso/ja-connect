@@ -9,6 +9,7 @@ import Downloads from "./features/downloads/pages/Downloads";
 import Settings from "./features/settings/pages/Settings";
 import NotFound from "./pages/NotFound";
 import { Login } from "./features/auth/pages/Login";
+import { Register } from "./features/auth/pages/Register";
 import { AuthProvider } from "./features/auth/hooks/useAuth";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
 
@@ -24,6 +25,7 @@ const App = () => (
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               
               {/* Protected routes */}
               <Route path="/" element={

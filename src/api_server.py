@@ -139,6 +139,11 @@ class PriceUpdateRequest(BaseModel):
     product_id: str
     new_price: float
 
+class UserRegister(BaseModel):
+    email: str
+    full_name: str
+    password: str
+
 class CatalogRequest(BaseModel):
     selected_products: List[Dict[str, Any]]
     title: str = "Catálogo JA Distribuidora"
@@ -173,6 +178,51 @@ async def login(user_credentials: UserLogin):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Login failed"
+        )
+
+@app.post("/api/auth/register", response_model=Token)
+async def register(user_data: UserRegister):
+    """Register a new user and return JWT tokens."""
+    try:
+        # Validate email format
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email format"
+            )
+        
+        # Validate password strength
+        if len(user_data.password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 8 characters long"
+            )
+        
+        # Create user with default "user" role
+        user_create_data = UserCreate(
+            email=user_data.email.lower().strip(),
+            full_name=user_data.full_name.strip(),
+            password=user_data.password,
+            role="user"
+        )
+        
+        new_user = user_manager.create_user(user_create_data)
+        
+        # Generate tokens for immediate login
+        tokens = create_tokens(new_user)
+        
+        logger.info(f"New user registered successfully: {new_user.email}")
+        return tokens
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
         )
 
 @app.post("/api/auth/logout")

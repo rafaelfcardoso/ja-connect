@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../shared/components/ui/button';
 import { Input } from '../../../shared/components/ui/input';
 import { Label } from '../../../shared/components/ui/label';
@@ -17,6 +18,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -141,6 +143,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               'Entrar'
             )}
           </Button>
+
+          <div className="text-center mt-4">
+            <button
+              type="button"
+              onClick={() => navigate('/register')}
+              className="text-sm text-[#FF5722] hover:text-[#E64A19] underline"
+              disabled={isLoading}
+            >
+              Não tem uma conta? Registre-se
+            </button>
+          </div>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">

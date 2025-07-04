@@ -30,6 +30,12 @@ export interface CreateUserData {
   role: 'admin' | 'user';
 }
 
+export interface RegisterData {
+  email: string;
+  full_name: string;
+  password: string;
+}
+
 class AuthService {
   private readonly ACCESS_TOKEN_KEY = 'ja_access_token';
   private readonly REFRESH_TOKEN_KEY = 'ja_refresh_token';
@@ -50,6 +56,35 @@ class AuthService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Login failed');
+    }
+
+    const tokens: AuthTokens = await response.json();
+    
+    // Store tokens
+    this.setTokens(tokens);
+    
+    // Get user info
+    const user = await this.getCurrentUser();
+    this.setUser(user);
+
+    return { user, tokens };
+  }
+
+  /**
+   * Register new user and login automatically
+   */
+  async register(userData: RegisterData): Promise<{ user: User; tokens: AuthTokens }> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Registration failed');
     }
 
     const tokens: AuthTokens = await response.json();
