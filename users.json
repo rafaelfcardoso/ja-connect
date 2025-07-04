@@ -6,5 +6,13 @@
     "is_active": true,
     "created_at": "2025-07-04T14:35:32.421018",
     "hashed_password": "$2b$12$lyc0u9Pz7MpzmUFOHqh1RuQFYZwfxWSg9Guh2tLA6d3MawDygXbR2"
+  },
+  "rafael.fcardoso@hotmail.com": {
+    "email": "rafael.fcardoso@hotmail.com",
+    "full_name": "Rafael Fernandes Cardoso",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2025-07-04T17:05:26.923762",
+    "hashed_password": "$2b$12$0KKW34ngCqkGbjFlDhV2JO2bpmG3/uTRByJX0lTTwAnzBnb/LVJve"
   }
 }
