@@ -155,3 +155,69 @@ When working on the VPS (ssh root@31.97.247.150), use the following command to p
 git push https://[GITHUB_TOKEN]@github.com/rafaelfcardoso/ja-connect.git main
 ```
 **Note:** Replace `[GITHUB_TOKEN]` with the actual GitHub Personal Access Token when pushing.
+
+## Development Workflow
+
+### Testing
+```bash
+# Test API integration
+python test_integration.py
+
+# Validate Notion connection
+python validate_notion.py
+
+# Test specific database operations
+python inspect_database.py
+```
+
+### Authentication System
+- User authentication with JWT tokens (30-minute access, 7-day refresh)
+- Role-based access: "admin" and "user" roles
+- File-based user storage: `users.json`
+- Password hashing with bcrypt
+
+### Price Editing Feature
+- Real-time price editing through web interface
+- Price updates sync with Notion database
+- Validation and error handling for price modifications
+- Feature located in `frontend/src/features/catalog/components/PriceEditDialog.tsx`
+
+### Launch Commands
+```bash
+# Quick system launch
+python launch_app.py
+
+# Individual component launch
+python start_system.py  # Recommended for development
+./start_backend.sh     # Backend only
+./start_frontend.sh    # Frontend only
+```
+
+## Code Architecture Details
+
+### Frontend State Management
+- React Query (@tanstack/react-query) for API state management
+- Feature-based routing with React Router
+- Shadcn/ui components with Radix UI primitives
+- Tailwind CSS for styling with custom component variants
+
+### Backend Architecture
+- FastAPI with async/await patterns
+- Notion API integration for product data
+- JWT-based authentication with refresh tokens
+- Background tasks for PDF generation
+- CORS middleware for cross-origin requests
+
+### Data Processing Pipeline
+1. **Notion Integration**: Fetches products from "Acessorios" table
+2. **Filtering**: Only products with `Catálogo Ativo == true`
+3. **Template Processing**: Jinja2 templates with custom price formatting
+4. **PDF Generation**: WeasyPrint for HTML-to-PDF conversion
+5. **File Management**: Timestamped output files in `output/` directory
+
+### Security Considerations
+- Environment variables for sensitive data (.env files)
+- JWT secret key configuration
+- Password hashing with bcrypt
+- CORS configuration for specific domains
+- Token expiration and refresh mechanisms

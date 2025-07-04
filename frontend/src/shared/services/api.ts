@@ -3,6 +3,7 @@
  */
 
 import { authService } from './authService';
+import { getDownloadMethod, getMobileInfo } from '../utils/mobile-utils';
 
 // Types
 export interface Product {
@@ -153,17 +154,56 @@ class ApiService {
   // Helper method to trigger file download in browser
   async downloadAndSave(filename: string, saveAs?: string): Promise<void> {
     try {
-      const blob = await this.downloadCatalog(filename);
+      const downloadMethod = getDownloadMethod();
+      const mobileInfo = getMobileInfo();
       
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = saveAs || filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      if (downloadMethod === 'window-open') {
+        // For mobile browsers, use blob approach but with window.open
+        const blob = await this.downloadCatalog(filename);
+        const url = window.URL.createObjectURL(blob);
+        
+        // Try to open in new tab first
+        const newWindow = window.open(url, '_blank');
+        
+        // If popup blocked or doesn't work, try alternative methods
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Fallback: change current window location
+          window.location.href = url;
+        }
+        
+        // Clean up after a delay
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 5000);
+        
+        // Show mobile-specific feedback for iOS
+        if (mobileInfo.isIOS) {
+          setTimeout(() => {
+            // Don't show prompt if user already navigated away
+            if (document.hidden) return;
+            
+            const userAgent = navigator.userAgent;
+            const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as unknown as { standalone: boolean }).standalone;
+            
+            if (!isInStandaloneMode && /Safari/.test(userAgent) && !/Chrome/.test(userAgent)) {
+              alert('Para compartilhar no WhatsApp: toque no ícone de compartilhamento no Safari e selecione "Salvar em Arquivos" ou "Compartilhar".');
+            }
+          }, 1000);
+        }
+      } else {
+        // Desktop browsers - use programmatic download
+        const blob = await this.downloadCatalog(filename);
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = saveAs || filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error('Download failed:', error);
       throw error;

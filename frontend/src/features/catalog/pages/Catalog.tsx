@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/shared/components/Layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { 
   Search, 
-  Filter, 
   Download, 
   Package, 
   Image as ImageIcon,
   FileText,
   Loader2,
-  AlertCircle 
+  AlertCircle,
+  Smartphone
 } from "lucide-react";
 import { apiService, type Product } from "@/shared/services/api";
 import { toast } from "sonner";
 import PriceEditDialog from "../components/PriceEditDialog";
+import { getMobileInfo } from "@/shared/utils/mobile-utils";
 
 
 const Catalog = () => {
@@ -27,6 +28,7 @@ const Catalog = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const mobileInfo = getMobileInfo();
 
   // Load products from API
   useEffect(() => {
@@ -88,6 +90,7 @@ const Catalog = () => {
 
   const handleGenerateCatalog = async () => {
     const selectedProductsData = getSelectedProductsData();
+    const mobileInfo = getMobileInfo();
     
     if (selectedProductsData.length === 0) {
       toast.error('Selecione pelo menos um produto para gerar o catálogo');
@@ -96,7 +99,13 @@ const Catalog = () => {
 
     try {
       setIsGenerating(true);
-      toast.info(`Gerando catálogo com ${selectedProductsData.length} produtos...`);
+      
+      // Show mobile-specific initial toast
+      if (mobileInfo.isMobile) {
+        toast.info(`Gerando catálogo com ${selectedProductsData.length} produtos...\n${mobileInfo.isIOS ? 'Aguarde o download iniciar automaticamente.' : 'O download iniciará em breve.'}`);
+      } else {
+        toast.info(`Gerando catálogo com ${selectedProductsData.length} produtos...`);
+      }
       
       const response = await apiService.generateCatalog({
         selected_products: selectedProductsData,
@@ -104,9 +113,24 @@ const Catalog = () => {
       });
 
       if (response.success && response.file_name) {
-        toast.success(response.message);
+        // Show success message based on platform
+        if (mobileInfo.isMobile) {
+          toast.success(`Catálogo gerado! ${mobileInfo.isIOS ? 'Verifique se o download iniciou. Se não, toque no link que aparecerá.' : 'O arquivo está sendo baixado.'}`);
+        } else {
+          toast.success(response.message);
+        }
+        
         // Trigger download
         await apiService.downloadAndSave(response.file_name);
+        
+        // Additional mobile feedback
+        if (mobileInfo.isMobile) {
+          setTimeout(() => {
+            toast.info('💡 Dica: Para compartilhar no WhatsApp, encontre o arquivo baixado e use o botão de compartilhamento.', {
+              duration: 5000,
+            });
+          }, 2000);
+        }
       } else {
         throw new Error(response.message || 'Falha na geração do catálogo');
       }
@@ -156,10 +180,12 @@ const Catalog = () => {
             >
               {isGenerating ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : mobileInfo.isMobile ? (
+                <Smartphone className="h-4 w-4 mr-2" />
               ) : (
                 <Download className="h-4 w-4 mr-2" />
               )}
-              {isGenerating ? "Gerando..." : `Gerar Catálogo (${selectedProducts.size})`}
+              {isGenerating ? "Gerando..." : mobileInfo.isMobile ? `Baixar (${selectedProducts.size})` : `Gerar Catálogo (${selectedProducts.size})`}
             </Button>
           </div>
         </div>
