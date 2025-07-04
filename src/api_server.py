@@ -13,13 +13,28 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from notion_api import NotionClient
-from catalog_generator import CatalogGenerator
-from utils import setup_logging
-from auth import (
-    user_manager, UserLogin, UserCreate, Token, UserResponse,
-    create_tokens, verify_token, UserInDB
-)
+try:
+    # Try relative imports first (for package mode)
+    from .notion_api import NotionClient
+    from .catalog_generator import CatalogGenerator
+    from .utils import setup_logging
+    from .auth import (
+        user_manager, UserLogin, UserCreate, Token, UserResponse,
+        create_tokens, verify_token, UserInDB
+    )
+except ImportError:
+    # Fall back to absolute imports (for direct execution)
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    
+    from notion_api import NotionClient
+    from catalog_generator import CatalogGenerator
+    from utils import setup_logging
+    from auth import (
+        user_manager, UserLogin, UserCreate, Token, UserResponse,
+        create_tokens, verify_token, UserInDB
+    )
 
 # Configure logging
 setup_logging()
