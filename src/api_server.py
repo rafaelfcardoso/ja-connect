@@ -40,6 +40,7 @@ app.add_middleware(
         "http://localhost:3000",  # Frontend service (nginx)
         "https://jadistribuidora.site",  # Production domain
         "https://www.jadistribuidora.site",  # Production domain with www
+        "https://app.jadistribuidora.site",  # Production domain with app prefix
         "http://ja-distribuidora-frontend:3000",  # Docker service-to-service
     ],
     allow_credentials=True,

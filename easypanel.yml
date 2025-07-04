@@ -35,7 +35,7 @@ services:
       - name: API_PORT
         value: "8000"
       - name: VITE_API_URL
-        value: "https://jadistribuidora.site"
+        value: "https://app.jadistribuidora.site"
     ports:
       - name: http
         port: 8000
