@@ -144,6 +144,14 @@ VITE_API_URL=https://jadistribuidora.site
 - `deployment-guide.md` - Complete deployment instructions
 
 ### Production Domain
-- Production URL: `https://jadistribuidora.site`
+- Production URL: `https://app.jadistribuidora.site`
 - CORS configured for both development and production domains
 - SSL/HTTPS ready configuration
+
+### VPS Git Operations
+When working on the VPS (ssh root@31.97.247.150), use the following command to push changes:
+```bash
+# Use the GitHub token for authentication
+git push https://[GITHUB_TOKEN]@github.com/rafaelfcardoso/ja-connect.git main
+```
+**Note:** Replace `[GITHUB_TOKEN]` with the actual GitHub Personal Access Token when pushing.
