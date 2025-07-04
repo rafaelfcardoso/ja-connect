@@ -17,7 +17,7 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy custom nginx configuration template
-COPY ../nginx.conf /etc/nginx/nginx.conf.template
+COPY nginx.conf /etc/nginx/nginx.conf.template
 
 # Copy built React app
 COPY --from=build /app/dist /usr/share/nginx/html
