@@ -12,6 +12,10 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+# Load environment variables early
+load_dotenv()
 
 try:
     # Try relative imports first (for package mode)
@@ -64,8 +68,25 @@ app.add_middleware(
 )
 
 # Initialize services
-notion_client = NotionClient()
-catalog_generator = CatalogGenerator()
+logger.info("Initializing services...")
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"Script location: {__file__}")
+logger.info(f"Environment variables - TEMPLATE_DIR: {os.getenv('TEMPLATE_DIR')}")
+logger.info(f"Environment variables - OUTPUT_DIR: {os.getenv('OUTPUT_DIR')}")
+
+try:
+    notion_client = NotionClient()
+    logger.info("NotionClient initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize NotionClient: {e}")
+    raise
+
+try:
+    catalog_generator = CatalogGenerator()
+    logger.info("CatalogGenerator initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize CatalogGenerator: {e}")
+    raise
 
 # Security
 security = HTTPBearer()
@@ -429,6 +450,34 @@ async def serve_frontend(full_path: str):
 
 if __name__ == "__main__":
     import uvicorn
+    from pathlib import Path
+    
+    # Determine if we need to change directory
+    current_dir = Path.cwd()
+    script_dir = Path(__file__).parent  # src directory
+    project_root = script_dir.parent     # project root
+    
+    # Determine starting location and set appropriate paths
+    started_from_src = current_dir.name == "src" and current_dir.parent == project_root
+    
+    if started_from_src:
+        os.chdir(project_root)
+        logger.info(f"Changed working directory from src to project root: {os.getcwd()}")
+        # When started from src, use the app object directly instead of module path
+        use_app_directly = True
+        reload_enabled = False
+    elif current_dir == project_root:
+        # Already in project root
+        logger.info(f"Running from project root: {os.getcwd()}")
+        module_path = "src.api_server:app"
+        use_app_directly = False
+        reload_enabled = True
+    else:
+        # Running from some other directory
+        logger.info(f"Running from: {os.getcwd()}")
+        module_path = "api_server:app"
+        use_app_directly = False
+        reload_enabled = True
     
     # Get configuration from environment
     host = os.getenv("API_HOST", "127.0.0.1")
@@ -436,10 +485,21 @@ if __name__ == "__main__":
     
     logger.info(f"Starting API server on {host}:{port}")
     
-    uvicorn.run(
-        "api_server:app",
-        host=host,
-        port=port,
-        reload=True,
-        log_level="info"
-    )
+    if use_app_directly:
+        logger.info("Using app object directly (no reload)")
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            reload=False,
+            log_level="info"
+        )
+    else:
+        logger.info(f"Using module path: {module_path}")
+        uvicorn.run(
+            module_path,
+            host=host,
+            port=port,
+            reload=reload_enabled,
+            log_level="info"
+        )

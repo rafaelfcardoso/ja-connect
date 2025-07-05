@@ -15,18 +15,55 @@ from dotenv import load_dotenv
 class CatalogGenerator:
     def __init__(self):
         load_dotenv()
-        self.output_dir = Path(os.getenv('OUTPUT_DIR', './output'))
-        self.template_dir = Path(os.getenv('TEMPLATE_DIR', './templates'))
+        
+        # Get template directory from environment or use default
+        template_dir_env = os.getenv('TEMPLATE_DIR', './templates')
+        
+        # Make template path absolute if it's relative
+        if not os.path.isabs(template_dir_env):
+            # Get the directory where this script is located
+            script_dir = Path(__file__).parent.parent  # Go up one level from src/
+            self.template_dir = script_dir / template_dir_env.lstrip('./')
+        else:
+            self.template_dir = Path(template_dir_env)
+        
+        # Make output directory absolute as well
+        output_dir_env = os.getenv('OUTPUT_DIR', './output')
+        if not os.path.isabs(output_dir_env):
+            script_dir = Path(__file__).parent.parent
+            self.output_dir = script_dir / output_dir_env.lstrip('./')
+        else:
+            self.output_dir = Path(output_dir_env)
+        
         self.logger = logging.getLogger(__name__)
         
+        # Log the paths being used for debugging
+        self.logger.info(f"Template directory: {self.template_dir.absolute()}")
+        self.logger.info(f"Output directory: {self.output_dir.absolute()}")
+        self.logger.info(f"Template directory exists: {self.template_dir.exists()}")
+        
+        # Check if catalog.html exists
+        catalog_template_path = self.template_dir / 'catalog.html'
+        self.logger.info(f"Catalog template path: {catalog_template_path.absolute()}")
+        self.logger.info(f"Catalog template exists: {catalog_template_path.exists()}")
+        
         # Ensure output directory exists
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(exist_ok=True, parents=True)
+        
+        # Ensure template directory exists
+        if not self.template_dir.exists():
+            raise FileNotFoundError(f"Template directory not found: {self.template_dir.absolute()}")
         
         # Set up Jinja2 environment
-        self.jinja_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(self.template_dir),
-            autoescape=jinja2.select_autoescape(['html', 'xml'])
-        )
+        try:
+            self.jinja_env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(str(self.template_dir)),
+                autoescape=jinja2.select_autoescape(['html', 'xml'])
+            )
+            self.logger.info("Jinja2 environment initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Jinja2 environment: {e}")
+            raise
         
         # Add custom filters
         self.jinja_env.filters['format_price'] = self._format_price
@@ -93,8 +130,11 @@ class CatalogGenerator:
             
             return template.render(**context)
             
-        except jinja2.TemplateNotFound:
-            raise FileNotFoundError(f"Template file 'catalog.html' not found in {self.template_dir}")
+        except jinja2.TemplateNotFound as e:
+            self.logger.error(f"Template not found: {e}")
+            self.logger.error(f"Looking in directory: {self.template_dir.absolute()}")
+            self.logger.error(f"Directory contents: {list(self.template_dir.iterdir()) if self.template_dir.exists() else 'Directory does not exist'}")
+            raise FileNotFoundError(f"Template file 'catalog.html' not found in {self.template_dir.absolute()}")
         except Exception as e:
             self.logger.error(f"Error rendering template: {str(e)}")
             raise

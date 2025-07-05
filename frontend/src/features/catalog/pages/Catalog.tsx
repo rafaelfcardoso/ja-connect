@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/shared/components/Layout/DashboardLayout";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -50,6 +50,12 @@ const Catalog = () => {
     loadProducts();
   }, []);
 
+  // Helper function to generate unique product key
+  const getProductKey = (product: Product): string => {
+    // Use product ID if available, otherwise fall back to nome_sku combination
+    return product.id || `${product.nome}_${product.sku}`;
+  };
+
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
@@ -65,18 +71,36 @@ const Catalog = () => {
     setSelectedProducts(newSelection);
   };
 
+  // Check how many of the currently visible (filtered) products are selected
+  const getVisibleSelectedCount = (): number => {
+    return filteredProducts.filter(product => 
+      selectedProducts.has(getProductKey(product))
+    ).length;
+  };
+
+  const areAllVisibleSelected = (): boolean => {
+    return filteredProducts.length > 0 && getVisibleSelectedCount() === filteredProducts.length;
+  };
+
   const handleSelectAll = () => {
-    if (selectedProducts.size === filteredProducts.length) {
-      setSelectedProducts(new Set());
+    const visibleProductKeys = filteredProducts.map(getProductKey);
+    
+    if (areAllVisibleSelected()) {
+      // Deselect all visible products
+      const newSelection = new Set(selectedProducts);
+      visibleProductKeys.forEach(key => newSelection.delete(key));
+      setSelectedProducts(newSelection);
     } else {
-      const allKeys = filteredProducts.map(p => `${p.nome}_${p.sku}`);
-      setSelectedProducts(new Set(allKeys));
+      // Select all visible products (keep previously selected ones from other filters)
+      const newSelection = new Set(selectedProducts);
+      visibleProductKeys.forEach(key => newSelection.add(key));
+      setSelectedProducts(newSelection);
     }
   };
 
   const getSelectedProductsData = (): Product[] => {
-    return filteredProducts.filter(product => 
-      selectedProducts.has(`${product.nome}_${product.sku}`)
+    return products.filter(product => 
+      selectedProducts.has(getProductKey(product))
     );
   };
 
@@ -168,10 +192,15 @@ const Catalog = () => {
               disabled={isLoading || filteredProducts.length === 0}
             >
               <Checkbox 
-                checked={selectedProducts.size === filteredProducts.length && filteredProducts.length > 0}
+                checked={areAllVisibleSelected()}
                 className="mr-2" 
               />
-              {selectedProducts.size === filteredProducts.length && filteredProducts.length > 0 ? 'Desmarcar Todos' : 'Selecionar Todos'}
+              {areAllVisibleSelected() ? 'Desmarcar Visíveis' : 'Selecionar Visíveis'}
+              {filteredProducts.length > 0 && (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  ({filteredProducts.length})
+                </span>
+              )}
             </Button>
             <Button 
               onClick={handleGenerateCatalog}
@@ -271,7 +300,7 @@ const Catalog = () => {
         {!isLoading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => {
-              const productKey = `${product.nome}_${product.sku}`;
+              const productKey = getProductKey(product);
               const isSelected = selectedProducts.has(productKey);
               
               return (

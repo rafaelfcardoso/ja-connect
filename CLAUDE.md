@@ -191,6 +191,11 @@ python launch_app.py
 python start_system.py  # Recommended for development
 ./start_backend.sh     # Backend only
 ./start_frontend.sh    # Frontend only
+
+# Manual API server launch (both methods work)
+python src/api_server.py          # From project root
+cd src && python api_server.py    # From project root, navigate to src first
+python api_server.py              # If already in src directory
 ```
 
 ## Code Architecture Details
